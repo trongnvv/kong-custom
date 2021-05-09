@@ -3,20 +3,26 @@ version: "3.9"
 networks:
   kong-net:
     driver: bridge
+  service-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
 
 services:
   kong-database:
     image: postgres:13.2-alpine
-    container_name: kong-db
+    container_name: c-kong-database
     restart: always
     environment:
       - POSTGRES_DB=kong
       - POSTGRES_USER=kong
       - POSTGRES_PASSWORD=kong
     volumes:
-      - ./cache-kong-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U kong"]
       interval: 3s
       retries: 5
     networks:
@@ -52,7 +58,7 @@ services:
       - KONG_DATABASE=postgres
       - KONG_PG_HOST=kong-database
       - KONG_PG_PASSWORD=kong
-      - KONG_LOG_LEVEL=debug
+      # - KONG_LOG_LEVEL=notice
       - KONG_PROXY_ACCESS_LOG=/dev/stdout
       - KONG_ADMIN_ACCESS_LOG=/dev/stdout
       - KONG_PROXY_ERROR_LOG=/dev/stderr
@@ -70,3 +76,29 @@ services:
       - ./custom-plugin:/usr/local/share/lua/5.1/kong/plugins/custom-plugin
     networks:
       - kong-net
+      - service-net
+  db-mongodb:
+    image: mongo:latest
+    container_name: c-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - service-net
+  service-auth:
+    image: trongnv138/golang:go-auth-dev-1.0.1
+    container_name: service-auth
+    depends_on:
+      - db-mongodb
+    ports:
+      - 3000:3000
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://admin:root@db-mongodb:27017/?authSource=admin
+      - MONGODB_NAME=trongnv
+    networks:
+      - service-net
