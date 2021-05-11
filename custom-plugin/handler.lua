@@ -13,7 +13,9 @@ local inspect = require("inspect")
 local _realm = 'Key realm="' .. _KONG._NAME .. '"'
 
 local function load_credential(key)
-    kong.log('load_credential ', inspect(kong.db.custom_plugin))
+    kong.log('load_credential ', inspect(kong.db.custom_plugin.select_by_key))
+    kong.log('load_credential ', inspect(kong.db.custom_plugin.select_by_name))
+    kong.log('load_credential ', inspect(kong.db.custom_plugin.select_by_me))
     local cred, err = kong.db.custom_plugin_fields:select_by_key(key)
     if not cred then
         return nil, err

@@ -6,6 +6,7 @@ return {
             "created_at"   TIMESTAMP WITH TIME ZONE     DEFAULT (CURRENT_TIMESTAMP(0) AT TIME ZONE 'UTC'),
             "consumer_id"  UUID                         REFERENCES "consumers" ("id") ON DELETE CASCADE,
             "key"          TEXT                         UNIQUE
+            "name"          TEXT                         UNIQUE
           );
 
           DO $$

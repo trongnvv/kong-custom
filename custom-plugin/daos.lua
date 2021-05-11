@@ -6,7 +6,7 @@ return {
         primary_key = {"id"},
         name = "custom_plugin",
         endpoint_key = "key",
-        cache_key = {"key"},
+        cache_key = {"key", "name"},
         workspaceable = true,
         admin_api_name = "key-auths",
         admin_api_nested_name = "key-auth",
@@ -23,6 +23,13 @@ return {
             }
         }, {
             key = {
+                type = "string",
+                required = false,
+                unique = true,
+                auto = true
+            }
+        }, {
+            name = {
                 type = "string",
                 required = false,
                 unique = true,
