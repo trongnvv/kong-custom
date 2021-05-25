@@ -105,28 +105,43 @@ services:
     networks:
       - kong-net
       - service-net
-  # db-mongodb:
-  #   image: mongo:latest
-  #   container_name: c-mongodb
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: admin
-  #     MONGO_INITDB_ROOT_PASSWORD: root
-  #   ports:
-  #     - 27017:27017
-  #   volumes:
-  #     - mongodb_data:/data/db
-  #   networks:
-  #     - service-net
-  # service-auth:
-  #   image: trongnv138/golang:go-auth-dev-1.0.1
-  #   container_name: service-auth
-  #   depends_on:
-  #     - db-mongodb
-  #   ports:
-  #     - 3000:3000
-  #   environment:
-  #     - PORT=3000
-  #     - MONGODB_URI=mongodb://admin:root@db-mongodb:27017/?authSource=admin
-  #     - MONGODB_NAME=trongnv
-  #   networks:
-  #     - service-net
+  db-mongodb:
+    image: mongo:latest
+    container_name: c-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - service-net
+  service-auth:
+    image: trongnv138/k8s_facebook:service-auth-0.0.1
+    container_name: service-auth
+    depends_on:
+      - db-mongodb
+    # ports:
+    #   - 8031:8031
+    environment:
+      - PORT=8031
+      - ROUTING=api/v1/auth
+      - BACKEND_ENDPOINT=http://api-gateway:8000/api/v1
+      - MONGO_URI=mongodb://admin:root@db-mongodb:27017/auth?authSource=admin
+    networks:
+      - service-net
+  service-facebook-auth:
+    image: trongnv138/k8s_facebook:service-facebook-auth-0.0.2
+    container_name: service-facebook-auth
+    depends_on:
+      - db-mongodb
+    # ports:
+    #   - 8032:8032
+    environment:
+      - PORT=8032
+      - ROUTING=api/v1/facebook
+      - BACKEND_ENDPOINT=http://api-gateway:8000/api/v1
+      - MONGO_URI=mongodb://admin:root@db-mongodb:27017/facebook_auth?authSource=admin
+    networks:
+      - service-net

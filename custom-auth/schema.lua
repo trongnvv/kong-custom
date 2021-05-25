@@ -18,6 +18,14 @@ return {
                     default = "Authorization",
                     required = true
                 }
+            }, {
+                key_add_header = {
+                    type = "string",
+                    default = "trongnv",
+                    required = true
+                }
+            }, {
+                public_path = typedefs.paths
             }}
         }
     }}

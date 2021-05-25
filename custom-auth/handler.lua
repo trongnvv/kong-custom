@@ -1,15 +1,14 @@
 local http = require "resty.http"
-local utils = require "kong.tools.utils"
 local inspect = require "inspect"
+local json = require('cjson')
 local TokenHandler = {
     VERSION = "1.0",
     PRIORITY = 1000
 }
 
-local function introspect_access_token(conf, access_token)
+local function get_access_token(conf, access_token)
     local httpc = http:new()
 
-    -- step 2: validate the customer access rights
     local res, err = httpc:request_uri(conf.authorization_endpoint, {
         method = "GET",
         ssl_verify = false,
@@ -28,17 +27,35 @@ local function introspect_access_token(conf, access_token)
         return kong.response.exit(500)
     end
 
-    return true -- all is well
+    return res
 end
 
 function TokenHandler:access(conf)
+    if (conf.public_path) then
+        for _, value in pairs(conf.public_path) do
+
+            if kong.request.get_path() == value then
+                kong.log("next ", value)
+                return
+            end
+        end
+    end
     local access_token = ngx.req.get_headers()[conf.token_header]
     if not access_token then
-        kong.response.exit(401) -- unauthorized
+        kong.response.exit(401, {
+            success = false,
+            message = 'Unauthorized'
+        })
     end
-    introspect_access_token(conf, access_token)
-
-    kong.service.request.clear_header(conf.token_header)
+    local res, err = get_access_token(conf, access_token)
+    local user = json.decode(res.body).data;
+    local user_info = {
+        userID = user._id,
+        username = user.username
+    }
+    kong.log('key_add_header ', conf.key_add_header)
+    kong.log('data_add_header ', json.encode(user_info))
+    kong.service.request.set_header(conf.key_add_header, json.encode(user_info))
 end
 
 return TokenHandler
