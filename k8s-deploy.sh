@@ -1,0 +1,1 @@
+kubectl create configmap kong-plugin-custom-auth --from-file=custom-auth -n kong
